@@ -136,11 +136,11 @@ const BountyBox: FC<ConcreteBountyParams> = ({ bountyIndex, bounty }) => {
                     </Title>
                     <Code>
                         <pre>
-                        {bounty.environment}
+                            {bounty.environment}
                         </pre>
                     </Code>
                 </>
-            ): ""}
+            ) : ""}
             <Title order={3}>
                 Total Prize:{" "}
                 {formatErc20Amount(token, totalPrize, erc20Metadata)}
@@ -157,7 +157,7 @@ const BountyBox: FC<ConcreteBountyParams> = ({ bountyIndex, bounty }) => {
 
 const SolutionCodeBox: FC<{ bountyType: BountyType, solutionCode?: string }> = ({ bountyType, solutionCode }) => {
     if (solutionCode == undefined) return <></>
-    switch(bountyType) {
+    switch (bountyType) {
         case BountyType.Bug:
             return (
                 <Stack align="center">
@@ -214,6 +214,22 @@ const ParticipantsBox: FC<{
                 />
             )}
             {sponsorships}
+            {bounty.bountyType === BountyType.RLModel && (
+                <div>
+                    <Center>
+                        <Title order={2}>Submissions</Title>
+                    </Center>
+                    {/* We use ***-***attempt.score to sort from highest to lowest */}
+                    {bounty.attempts && bounty.attempts.toSorted(attempt => -attempt.score).map((attempt, index) => (
+                        <ProfileCard
+                            key={index}
+                            profile={attempt.hacker}
+                            badge={attempt.score.toString()}
+                            badgeColor="green"
+                        />
+                    ))}
+                </div>
+            )}
         </Stack>
     );
 };
@@ -230,7 +246,7 @@ const BountyInfoPage: FC<BountyParams> = ({ params: { bountyId } }) => {
 
     // Gets bounty state from the Cartesi Machine
     const bountyResult = useBounty(bountyIndex);
-    
+
     // Gets input for a given bounty attempt
     const inputResult = useInput(solutionInputIndex);
 
