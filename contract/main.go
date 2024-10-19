@@ -512,8 +512,10 @@ func CheckOpenRLBounty(b *shared.AppBounty, currTime int64, env rollmelette.Env,
 		// Update reports
 		cJson, _ := json.Marshal(c.state)
 		env.Report(cJson)
+		return true, nil
 	}
-	return true, nil
+
+	return false, nil
 }
 
 func main() {
