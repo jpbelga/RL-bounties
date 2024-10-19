@@ -91,9 +91,10 @@ const ButtonsBox: FC<{
     const canWithdraw =
         bountyStatus.kind === "expired" && !bountyStatus.withdrawn;
     const hasWinner = !(JSON.stringify(bounty.exploit) === '{}');
+    const { address, connector, isConnected } = useAccount()
+
     const isWinner = () => {
         if(bounty.attempts === null) return false;
-        const { address, connector, isConnected } = useAccount()
         let winner = bounty.attempts[0]
         for(const attempt of bounty.attempts )
             if(attempt.score > winner.score) {
@@ -260,14 +261,16 @@ const ParticipantsBox: FC<{
                         <Title order={2}>Submissions</Title>
                     </Center>
                     {/* We use ***-***attempt.score to sort from highest to lowest */}
+                    <Stack gap="xl">
                     {bounty.attempts && bounty.attempts.toSorted(attempt => -attempt.score).map((attempt, index) => (
-                        <ProfileCard
+                        <ProfileCard 
                             key={index}
                             profile={attempt.hacker}
                             badge={attempt.score.toString()}
                             badgeColor="green"
                         />
                     ))}
+                    </Stack>
                 </div>
             )}
         </Stack>

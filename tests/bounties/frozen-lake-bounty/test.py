@@ -3,8 +3,10 @@ import onnxruntime as ort
 import numpy as np
 import sys
 
+np.random.seed(42) 
+
 # Load the FrozenLake environment
-env = gym.make("FrozenLake-v1")
+env = gym.make("FrozenLake-v1", is_slippery=False)
 
 # Load the ONNX model
 model_path = sys.argv[1]  # Update this path
@@ -24,13 +26,14 @@ steps = 0
 for _ in range(100):  # You can adjust the number of steps
     # Convert the state to a numpy array and add a batch dimension
     state_array = np.array([state], dtype=np.float32)
-    
+    state_array = state_array[np.newaxis, :]
     # Run the model to get the action
     outputs = session.run([output_name], {input_name: state_array})
     action = np.argmax(outputs[0][0])  # Assuming the output is a probability distribution
     
     # Take the action in the environment
     next_state, reward, terminated, truncated, _ = env.step(action)
+    state = next_state
     
     if reward == 1: 
         break

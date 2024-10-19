@@ -1,2 +1,2 @@
 import gymnasium as gym
-env = gym.make('CartPole-v1')
+env = gym.make('FrozenLake-v1')
