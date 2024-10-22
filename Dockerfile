@@ -41,14 +41,16 @@ apt-get update
 apt-get install -y --no-install-recommends \
   libatomic1 \
   libopenblas-dev \
+  libgomp1 \
   python3-full \
   python3-pip
 EOF
 
+
+
 COPY ./requirements.txt /bounties/requirements.txt
 
 RUN pip install -r /bounties/requirements.txt --no-cache
-
 
 
 ################################################################################
