@@ -123,7 +123,7 @@ const ButtonsBox: FC<{
             </Button>
             <Button
                 component={Link}
-                href={`/bounty/${bountyIndex}/exploit`}
+                href={`/bounty/${bountyIndex}`}
                 disabled={!isOpen}
                 fullWidth
                 visibleFrom="md"
@@ -212,10 +212,11 @@ const SolutionCodeBox: FC<{ bountyType: BountyType, solutionCode?: string }> = (
                 </Stack>
             );
         case BountyType.RLModel:
+            const base64SolutionCode = Buffer.from(solutionCode).toString('base64');
             return (
                 <Stack align="center">
                     <Title order={2}>Winning Model</Title>
-                    <Link href={`data:application/octet-stream;${solutionCode}`}>
+                    <Link href={`data:application/octet-stream;base64,${base64SolutionCode}`} download="model.pth">
                         <Button>Download .pth model</Button>
                     </Link>
                 </Stack>
