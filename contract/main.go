@@ -2,6 +2,7 @@ package main
 
 import (
 	"bug-buster/shared"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/holiman/uint256"
@@ -432,42 +434,71 @@ func RunExploit(env rollmelette.EnvInspector, bountyIndex int, exploit string, c
 func RunRLModel(env rollmelette.EnvInspector, bountyIndex int, exploit string) (float64, error) {
 	codePath := CodePath(bountyIndex)
 	slog.Debug("testing RL model", "codePath", codePath)
-	bytes, err := base64.StdEncoding.DecodeString(exploit)
+
+	// Decode the exploit base64 string
+	payloadBytes, err := base64.StdEncoding.DecodeString(exploit)
 	if err != nil {
 		return -1, fmt.Errorf("base64 decode failed: %v", err)
 	}
 
+	// Clean up files after function completes
 	defer os.RemoveAll("/var/tmp/inference")
-	defer os.Remove("/var/tmp/model.onnx")
+	defer os.Remove("/var/tmp/model.pth")
 
+	// Prepare the inference directory
 	os.RemoveAll("/var/tmp/inference")
-	os.Mkdir("/var/tmp/inference", 0777)
+	err = os.Mkdir("/var/tmp/inference", 0777)
+	if err != nil {
+		return -1, fmt.Errorf("creating inference directory failed: %v", err)
+	}
 
-	err = os.WriteFile("/var/tmp/inference/model.onnx", bytes, 0644)
+	// Write the decoded model to a file
+	err = os.WriteFile("/var/tmp/inference/model.pth", payloadBytes, 0644)
 	if err != nil {
 		return -1, fmt.Errorf("writing model to file failed: %s", err)
 	}
 
+	// Extract the tar file containing the code
 	cmd := exec.Command("tar", "-xvf", codePath, "-C", "/var/tmp/inference")
 	err = cmd.Run()
 	if err != nil {
 		return -1, fmt.Errorf("Error extracting tar file: %s", err)
 	}
 
-	cmd = exec.Command("python3", "/var/tmp/inference/test.py", "/var/tmp/inference/model.onnx")
-	output, err := cmd.CombinedOutput()
+	// Create buffers for stdout and stderr
+	var stdoutBuf, stderrBuf bytes.Buffer
+
+	// Run the Python command for inference
+	cmd = exec.Command("python3", "/var/tmp/inference/test.py", "/var/tmp/inference/model.pth")
+
+	// Capture stdout and stderr
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+
+	err = cmd.Run()
+	stdout := stdoutBuf.String()
+	stderr := stderrBuf.String()
+
+	// Handle command execution error, including exit codes
 	if err != nil {
-		return -1, fmt.Errorf("Error running command: ", string(output), err)
+		if exitError, ok := err.(*exec.ExitError); ok {
+			// Capture and log the exit code and stderr
+			return -1, fmt.Errorf("Python script failed with exit code: %d. Stderr: %s", exitError.ExitCode(), stderr)
+		} else {
+			return -1, fmt.Errorf("Failed to execute Python script: %v", err)
+		}
 	}
 
-	resultStr := string(output)              // Convert the byte slice to string
-	resultStr = resultStr[:len(resultStr)-1] // Remove the trailing newline, if present
+	// Log successful execution
+	slog.Debug("Python script executed successfully. Stdout:\n%s", stdout)
 
-	// Parse the float64 value
+	// Parse the output (assuming it is a float64 value)
+	resultStr := strings.TrimSpace(stdout) // Remove any trailing spaces or newlines
 	result, err := strconv.ParseFloat(resultStr, 64)
 	if err != nil {
-		return -1, fmt.Errorf("Error parsing float: ", err)
+		return -1, fmt.Errorf("Error parsing float from stdout: %v", err)
 	}
+
 	slog.Debug("inference succeeded!")
 	return result, nil
 }
