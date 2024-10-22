@@ -73,8 +73,11 @@ const ButtonsBox: FC<{
     bounty: AppBounty;
 }> = ({ bountyIndex, bountyStatus, bounty }) => {
 
+    // This is the transaction used for getting the prize; It's necessary for the machine to compute the winner from the
+    // current attempts; We make it as small as possible to make it cheaper. It doesn't have to have any payload outside of
+    // the bounty index for the rollup to compute the winner and emit the voucher
     const addInputPrepare = usePrepareSendExploit({
-        bountyIndex,
+        name: "a", bountyIndex, exploit: "a"
     });
 
     const addInputWrite = useInputBoxAddInput(addInputPrepare.config);
@@ -134,7 +137,7 @@ const ButtonsBox: FC<{
             {bounty.bountyType == BountyType.RLModel ? (
                 <Button
                 fullWidth
-                disabled={isOpen && hasWinner && !isWinner()}
+                disabled={hasWinner || isOpen || !isWinner()}
                 onClick={() => addInputWrite.write && addInputWrite.write()}
             >
                 Get Prize
@@ -213,7 +216,7 @@ const SolutionCodeBox: FC<{ bountyType: BountyType, solutionCode?: string }> = (
                 <Stack align="center">
                     <Title order={2}>Winning Model</Title>
                     <Link href={`data:application/octet-stream;${solutionCode}`}>
-                        <Button>Download .ONNX model</Button>
+                        <Button>Download .pth model</Button>
                     </Link>
                 </Stack>
             );
