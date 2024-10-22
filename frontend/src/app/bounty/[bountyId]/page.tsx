@@ -262,14 +262,17 @@ const ParticipantsBox: FC<{
                     </Center>
                     {/* We use ***-***attempt.score to sort from highest to lowest */}
                     <Stack gap="xl">
-                    {bounty.attempts && bounty.attempts.toSorted(attempt => -attempt.score).map((attempt, index) => (
+                    {bounty.attempts && bounty.attempts
+                    .toSorted((a, b) => b.score - a.score) // Sort in descending order based on score
+                    .map((attempt, index) => (
                         <ProfileCard 
                             key={index}
                             profile={attempt.hacker}
                             badge={attempt.score.toString()}
                             badgeColor="green"
                         />
-                    ))}
+                    ))
+                    }
                     </Stack>
                 </div>
             )}
